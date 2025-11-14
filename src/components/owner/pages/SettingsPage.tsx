@@ -49,13 +49,13 @@ export function SettingsPage() {
       >
         <div className="flex gap-2">
           {[
-            { id: 'general', label: 'General' },
-            { id: 'api', label: 'API Keys' },
-            { id: 'notifications', label: 'Notifications' },
+            { id: 'general' as const, label: 'General' },
+            { id: 'api' as const, label: 'API Keys' },
+            { id: 'notifications' as const, label: 'Notifications' },
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id)}
               className={`px-6 py-3 rounded-xl font-semibold transition-all ${
                 activeTab === tab.id
                   ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg'
@@ -190,10 +190,10 @@ export function SettingsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Company Size
                 </label>
-                <select className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <select defaultValue="51-200 employees" className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500">
                   <option>1-10 employees</option>
                   <option>11-50 employees</option>
-                  <option selected>51-200 employees</option>
+                  <option>51-200 employees</option>
                   <option>201-500 employees</option>
                   <option>500+ employees</option>
                 </select>

@@ -1,43 +1,51 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { GlassCard } from '../shared/GlassCard';
 import { analyticsService } from '../../services/analyticsService';
 
-export function RiskRadar() {
-  const [risks, setRisks] = useState<any[]>([]);
+interface RiskItem {
+  category: string;
+  level: 'critical' | 'high' | 'medium' | 'low';
+  metric: number;
+  trend: 'up' | 'down' | 'stable';
+  description: string;
+}
+
+export const RiskRadar = memo(function RiskRadar() {
+  const [risks, setRisks] = useState<RiskItem[]>([]);
 
   useEffect(() => {
     const riskData = analyticsService.generateRiskRadar();
 
     // Convert to array format for rendering
-    const riskArray = [
+    const riskArray: RiskItem[] = [
       {
         category: 'Retention Risk',
         level: riskData.retention.severity,
         metric: Math.min(100, riskData.retention.count * 15), // Scale for visualization
-        trend: riskData.retention.count > 3 ? 'up' : riskData.retention.count > 0 ? 'stable' : 'down',
+        trend: (riskData.retention.count > 3 ? 'up' : riskData.retention.count > 0 ? 'stable' : 'down') as 'up' | 'down' | 'stable',
         description: riskData.retention.description
       },
       {
         category: 'Legal Exposure',
         level: riskData.legal.severity,
         metric: Math.min(100, riskData.legal.count * 25),
-        trend: riskData.legal.count > 2 ? 'up' : riskData.legal.count > 0 ? 'stable' : 'down',
+        trend: (riskData.legal.count > 2 ? 'up' : riskData.legal.count > 0 ? 'stable' : 'down') as 'up' | 'down' | 'stable',
         description: riskData.legal.description
       },
       {
         category: 'Project Health',
         level: riskData.project.severity,
         metric: Math.min(100, riskData.project.count * 15),
-        trend: riskData.project.count > 3 ? 'up' : riskData.project.count > 0 ? 'stable' : 'down',
+        trend: (riskData.project.count > 3 ? 'up' : riskData.project.count > 0 ? 'stable' : 'down') as 'up' | 'down' | 'stable',
         description: riskData.project.description
       },
       {
         category: 'Culture Breakdown',
         level: riskData.culture.severity,
         metric: Math.min(100, riskData.culture.count * 20),
-        trend: riskData.culture.count > 2 ? 'up' : riskData.culture.count > 0 ? 'stable' : 'down',
+        trend: (riskData.culture.count > 2 ? 'up' : riskData.culture.count > 0 ? 'stable' : 'down') as 'up' | 'down' | 'stable',
         description: riskData.culture.description
       }
     ];
@@ -122,4 +130,4 @@ export function RiskRadar() {
       </div>
     </GlassCard>
   );
-}
+});

@@ -17,12 +17,10 @@ function App() {
     // Initialize Claude API if key exists
     if (claudeApiKey) {
       claudeService.initialize(claudeApiKey);
-      console.log('Claude API initialized');
     }
 
     // Seed demo data if no feedback exists
     if (!hasFeedbackData()) {
-      console.log('No feedback data found, seeding demo data...');
       seedDemoData();
     }
   }, [claudeApiKey]);

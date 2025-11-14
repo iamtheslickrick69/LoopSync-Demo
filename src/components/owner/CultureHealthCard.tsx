@@ -15,9 +15,15 @@ export function CultureHealthCard() {
     const analytics = analyticsService.generateDashboardAnalytics();
     const score = analytics.cultureScore;
 
+    // Calculate previous score (simulate historical data)
+    const prevScore = Math.max(0, score - Math.floor(Math.random() * 10) + 5);
+
+    // Calculate trend using local variables (not state)
+    const calculatedTrend = prevScore > 0 ? ((score - prevScore) / prevScore) * 100 : 0;
+
+    // Update all state together
     setCurrent(score);
-    setPrevious(Math.max(0, score - Math.floor(Math.random() * 10) + 5)); // Simulate previous
-    const calculatedTrend = previous > 0 ? ((score - previous) / previous) * 100 : 0;
+    setPrevious(prevScore);
     setTrend(calculatedTrend);
   }, []);
 
