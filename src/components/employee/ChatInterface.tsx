@@ -8,7 +8,6 @@ import { claudeService } from '../../services/claudeAPI';
 import { MessageBubble } from './MessageBubble';
 import { DraftMessageCard } from './DraftMessageCard';
 import { GlassCard } from '../shared/GlassCard';
-import { Button } from '../shared/Button';
 import { AIOrb } from '../shared/AIOrb';
 import { DraftMetadata } from '../../types/chat';
 import { Tag } from '../../types/feedback';
