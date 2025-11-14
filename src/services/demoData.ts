@@ -222,12 +222,10 @@ export function seedDemoData(): void {
   ];
 
   analyticsService.saveFeedbackData(demoFeedback);
-  console.log('Demo data seeded successfully!');
 }
 
 export function clearDemoData(): void {
   analyticsService.saveFeedbackData([]);
-  console.log('Demo data cleared');
 }
 
 export function hasFeedbackData(): boolean {

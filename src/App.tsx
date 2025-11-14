@@ -38,7 +38,6 @@ function App() {
 
     // Seed demo data if no feedback exists
     if (!hasFeedbackData()) {
-      console.log('No feedback data found, seeding demo data...');
       seedDemoData();
     }
   }, [claudeApiKey, setClaudeApiKey]);
