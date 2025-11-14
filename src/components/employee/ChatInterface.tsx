@@ -3,15 +3,56 @@ import { Send, Paperclip, Mic } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useChatStore } from '../../store/chatStore';
 import { useSettingsStore } from '../../store/portalStore';
+import { useFeedbackStore } from '../../store/feedbackStore';
 import { claudeService } from '../../services/claudeAPI';
 import { MessageBubble } from './MessageBubble';
+import { DraftMessageCard } from './DraftMessageCard';
 import { GlassCard } from '../shared/GlassCard';
+import { DraftMetadata } from '../../types/chat';
+import { Tag } from '../../types/feedback';
+
+// Helper function to parse draft messages from Coro's response
+function parseDraftMessage(response: string): { hasNormalText: string; draft: DraftMetadata | null; draftContent: string } {
+  const draftRegex = /<DRAFT_MESSAGE>([\s\S]*?)<\/DRAFT_MESSAGE>/;
+  const match = response.match(draftRegex);
+
+  if (!match) {
+    return { hasNormalText: response, draft: null, draftContent: '' };
+  }
+
+  const draftBlock = match[1];
+  const normalText = response.replace(match[0], '').trim();
+
+  // Parse privacy level
+  const privacyMatch = draftBlock.match(/<PRIVACY_LEVEL>(.*?)<\/PRIVACY_LEVEL>/);
+  const privacyLevel = (privacyMatch?.[1].trim() || 'anonymous') as 'anonymous' | 'group' | 'department' | 'identified';
+
+  // Parse urgency
+  const urgencyMatch = draftBlock.match(/<URGENCY>(.*?)<\/URGENCY>/);
+  const urgency = (urgencyMatch?.[1].trim() || 'general') as 'general' | 'priority' | 'critical';
+
+  // Parse tags
+  const tagsMatch = draftBlock.match(/<TAGS>(.*?)<\/TAGS>/);
+  const tagsStr = tagsMatch?.[1].trim() || '';
+  const tags = tagsStr.split(',').map(t => t.trim()).filter(t => t.length > 0);
+
+  // Parse content
+  const contentMatch = draftBlock.match(/<CONTENT>([\s\S]*?)<\/CONTENT>/);
+  const draftContent = contentMatch?.[1].trim() || '';
+
+  return {
+    hasNormalText: normalText,
+    draft: { privacyLevel, urgency, tags },
+    draftContent,
+  };
+}
 
 export function ChatInterface() {
   const [input, setInput] = useState('');
   const [isInitialState, setIsInitialState] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { messages, isTyping, addMessage, setTyping, setError } = useChatStore();
+  const { messages, isTyping, addMessage, updateMessage, removeMessage, setTyping, setError } = useChatStore();
+  const { addFeedback } = useFeedbackStore();
   const { claudeApiKey } = useSettingsStore();
 
   useEffect(() => {
@@ -43,14 +84,15 @@ export function ChatInterface() {
     setError(null);
 
     try {
-      // Prepare conversation history for Claude
-      const conversationHistory = [
-        ...messages.map((m) => ({
+      // Prepare conversation history for Claude (exclude draft messages, only user/assistant)
+      const conversationHistory = messages
+        .filter(m => m.role === 'user' || m.role === 'assistant')
+        .map((m) => ({
           role: m.role as 'user' | 'assistant',
           content: m.content,
-        })),
-        { role: 'user' as const, content: userMessage },
-      ];
+        }));
+
+      conversationHistory.push({ role: 'user' as const, content: userMessage });
 
       let assistantResponse = '';
 
@@ -62,8 +104,23 @@ export function ChatInterface() {
         }
       );
 
-      // Add assistant message
-      addMessage({ role: 'assistant', content: assistantResponse });
+      // Parse response for draft messages
+      const parsed = parseDraftMessage(assistantResponse);
+
+      // Add normal assistant message if there's text
+      if (parsed.hasNormalText) {
+        addMessage({ role: 'assistant', content: parsed.hasNormalText });
+      }
+
+      // Add draft message if present
+      if (parsed.draft && parsed.draftContent) {
+        addMessage({
+          role: 'draft',
+          content: parsed.draftContent,
+          draftMetadata: parsed.draft,
+          approved: false,
+        });
+      }
     } catch (error) {
       setError(
         error instanceof Error ? error.message : 'Failed to get response from Coro'
@@ -78,6 +135,50 @@ export function ChatInterface() {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const handleApproveDraft = async (messageId: string) => {
+    const draftMessage = messages.find(m => m.id === messageId);
+    if (!draftMessage || !draftMessage.draftMetadata) return;
+
+    // Convert tags array to Tag objects
+    const feedbackTags: Tag[] = draftMessage.draftMetadata.tags.map(tag => ({
+      type: 'topic' as const,
+      value: tag,
+    }));
+
+    // Determine sentiment based on urgency (simple heuristic)
+    const sentiment = draftMessage.draftMetadata.urgency === 'critical' ? -1 :
+                      draftMessage.draftMetadata.urgency === 'priority' ? -0.5 : 0;
+
+    // Submit to feedback store
+    addFeedback({
+      privacyLevel: draftMessage.draftMetadata.privacyLevel,
+      urgency: draftMessage.draftMetadata.urgency,
+      content: draftMessage.content,
+      sentiment: sentiment as -1 | -0.5 | 0 | 0.5 | 1,
+      tags: feedbackTags,
+      status: 'unread',
+    });
+
+    // Mark as approved and add confirmation message
+    updateMessage(messageId, { approved: true });
+    addMessage({
+      role: 'assistant',
+      content: '✅ Your message has been successfully submitted to the leadership dashboard. They will review it and may respond if needed. Is there anything else I can help you with?',
+    });
+  };
+
+  const handleRejectDraft = (messageId: string) => {
+    removeMessage(messageId);
+    addMessage({
+      role: 'assistant',
+      content: 'No problem! The draft has been discarded. Would you like me to help you with something else?',
+    });
+  };
+
+  const handleEditDraft = (messageId: string, newContent: string) => {
+    updateMessage(messageId, { content: newContent });
   };
 
   return (
@@ -102,9 +203,28 @@ export function ChatInterface() {
           </motion.div>
         )}
 
-        {messages.map((message, index) => (
-          <MessageBubble key={message.id} message={message} delay={index * 0.05} />
-        ))}
+        {messages.map((message, index) => {
+          if (message.role === 'draft' && !message.approved) {
+            return (
+              <DraftMessageCard
+                key={message.id}
+                message={message}
+                onApprove={handleApproveDraft}
+                onReject={handleRejectDraft}
+                onEdit={handleEditDraft}
+              />
+            );
+          }
+
+          // Don't show approved drafts as regular messages
+          if (message.role === 'draft' && message.approved) {
+            return null;
+          }
+
+          return (
+            <MessageBubble key={message.id} message={message} delay={index * 0.05} />
+          );
+        })}
 
         {isTyping && (
           <motion.div

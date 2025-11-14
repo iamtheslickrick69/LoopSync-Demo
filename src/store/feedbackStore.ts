@@ -10,6 +10,7 @@ interface FeedbackStore {
   clearFilters: () => void;
   getFilteredFeedback: () => Feedback[];
   updateFeedbackStatus: (id: string, status: Feedback['status']) => void;
+  addFeedback: (feedback: Omit<Feedback, 'id' | 'timestamp'>) => void;
 }
 
 export const useFeedbackStore = create<FeedbackStore>((set, get) => ({
@@ -76,6 +77,18 @@ export const useFeedbackStore = create<FeedbackStore>((set, get) => ({
       feedback: state.feedback.map((f) =>
         f.id === id ? { ...f, status } : f
       ),
+    }));
+  },
+
+  addFeedback: (feedbackData) => {
+    const newFeedback: Feedback = {
+      ...feedbackData,
+      id: `feedback-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date(),
+    };
+
+    set((state) => ({
+      feedback: [newFeedback, ...state.feedback],
     }));
   },
 }));
