@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Filter, CheckCircle, Circle } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { GlassCard } from '../shared/GlassCard';
 import { Badge } from '../shared/Badge';
@@ -8,7 +8,7 @@ import { Button } from '../shared/Button';
 import { useFeedbackStore } from '../../store/feedbackStore';
 
 export function FeedbackStream() {
-  const { getFilteredFeedback, setFilters, filters, updateFeedbackStatus } = useFeedbackStore();
+  const { getFilteredFeedback, setFilters, updateFeedbackStatus } = useFeedbackStore();
   const [showFilters, setShowFilters] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 

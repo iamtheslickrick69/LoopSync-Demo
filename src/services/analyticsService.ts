@@ -1,5 +1,5 @@
 import { AnalyzedFeedback } from './feedbackAnalysis';
-import { SentimentDataPoint, DepartmentMetrics, RiskIndicator, AIInsight } from '../types/analytics';
+import { SentimentDataPoint, DepartmentMetrics, AIInsight } from '../types/analytics';
 import { claudeService } from './claudeAPI';
 
 export interface DashboardAnalytics {
