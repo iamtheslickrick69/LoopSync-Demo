@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Feedback, FeedbackFilters } from '../types/feedback';
+import { FeedbackFilters } from '../types/feedback';
 import { analyticsService } from '../services/analyticsService';
 import { AnalyzedFeedback } from '../services/feedbackAnalysis';
 

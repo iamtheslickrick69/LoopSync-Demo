@@ -13,7 +13,7 @@ interface ChatStore {
   setTyping: (isTyping: boolean) => void;
   setError: (error: string | null) => void;
   clearMessages: () => void;
-  submitConversationAsFeedback: (department?: string) => Promise<boolean>;
+  submitConversationAsFeedback: (messageIds?: string[], department?: string) => Promise<boolean>;
 }
 
 export const useChatStore = create<ChatStore>((set, get) => ({
@@ -40,11 +40,17 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
   clearMessages: () => set({ messages: [], error: null }),
 
-  submitConversationAsFeedback: async (department?: string) => {
+  submitConversationAsFeedback: async (messageIds?: string[], department?: string) => {
     const { messages } = get();
 
     // Extract user messages to create feedback text
-    const userMessages = messages.filter(m => m.role === 'user');
+    let userMessages = messages.filter(m => m.role === 'user');
+
+    // If specific message IDs provided, filter to only those
+    if (messageIds && messageIds.length > 0) {
+      userMessages = userMessages.filter(m => messageIds.includes(m.id));
+    }
+
     if (userMessages.length === 0) {
       set({ error: 'No messages to submit as feedback' });
       return false;
@@ -66,7 +72,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         text: feedbackText,
         department: department || 'General',
         timestamp: new Date().toISOString(),
-        status: 'submitted' as const,
+        status: 'unread' as const,
         anonymous: true,
         analysis
       };

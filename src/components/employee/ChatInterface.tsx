@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Paperclip, Mic, CheckCircle } from 'lucide-react';
+import { Send, Paperclip, Mic, CheckCircle, CheckSquare, Square } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useChatStore } from '../../store/chatStore';
 import { useSettingsStore } from '../../store/portalStore';
@@ -12,6 +12,8 @@ export function ChatInterface() {
   const [input, setInput] = useState('');
   const [isInitialState, setIsInitialState] = useState(true);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(new Set());
+  const [selectionMode, setSelectionMode] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const {
     messages,
@@ -91,10 +93,41 @@ export function ChatInterface() {
     }
   };
 
+  const toggleMessageSelection = (messageId: string) => {
+    setSelectedMessageIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(messageId)) {
+        newSet.delete(messageId);
+      } else {
+        newSet.add(messageId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectionMode = () => {
+    if (selectionMode) {
+      // Exiting selection mode
+      setSelectedMessageIds(new Set());
+    }
+    setSelectionMode(!selectionMode);
+  };
+
   const handleSubmitFeedback = async () => {
-    const success = await submitConversationAsFeedback();
+    let messagesToSubmit: string[] | undefined;
+
+    if (selectionMode && selectedMessageIds.size > 0) {
+      // Submit only selected messages
+      messagesToSubmit = messages
+        .filter(m => m.role === 'user' && selectedMessageIds.has(m.id))
+        .map(m => m.id);
+    }
+
+    const success = await submitConversationAsFeedback(messagesToSubmit);
     if (success) {
       setShowSuccessMessage(true);
+      setSelectionMode(false);
+      setSelectedMessageIds(new Set());
       setTimeout(() => {
         setShowSuccessMessage(false);
         clearMessages();
@@ -126,7 +159,23 @@ export function ChatInterface() {
         )}
 
         {messages.map((message, index) => (
-          <MessageBubble key={message.id} message={message} delay={index * 0.05} />
+          <div key={message.id} className="flex items-start gap-2">
+            {selectionMode && message.role === 'user' && (
+              <button
+                onClick={() => toggleMessageSelection(message.id)}
+                className="mt-2 p-1 hover:bg-white/50 rounded transition-colors"
+              >
+                {selectedMessageIds.has(message.id) ? (
+                  <CheckSquare className="w-5 h-5 text-primary-600" />
+                ) : (
+                  <Square className="w-5 h-5 text-gray-400" />
+                )}
+              </button>
+            )}
+            <div className="flex-1">
+              <MessageBubble message={message} delay={index * 0.05} />
+            </div>
+          </div>
         ))}
 
         {isTyping && (
@@ -158,18 +207,61 @@ export function ChatInterface() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="px-4 py-2 border-t border-gray-200/50"
+            className="px-4 py-3 border-t border-gray-200/50 space-y-2"
           >
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleSubmitFeedback}
-              isLoading={isSubmittingFeedback}
-              className="w-full flex items-center justify-center gap-2"
-            >
-              <CheckCircle className="w-4 h-4" />
-              {isSubmittingFeedback ? 'Analyzing & Submitting...' : 'Submit as Feedback'}
-            </Button>
+            {/* Selection Mode Info */}
+            {selectionMode && (
+              <div className="text-sm text-gray-600 text-center">
+                {selectedMessageIds.size > 0 ? (
+                  <span className="font-medium text-primary-600">
+                    {selectedMessageIds.size} message{selectedMessageIds.size !== 1 ? 's' : ''} selected
+                  </span>
+                ) : (
+                  'Select messages above to submit as feedback'
+                )}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              {/* Toggle Selection Mode */}
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={toggleSelectionMode}
+                className="flex items-center justify-center gap-2"
+              >
+                {selectionMode ? (
+                  <>
+                    <Square className="w-4 h-4" />
+                    Cancel
+                  </>
+                ) : (
+                  <>
+                    <CheckSquare className="w-4 h-4" />
+                    Select
+                  </>
+                )}
+              </Button>
+
+              {/* Submit Button */}
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleSubmitFeedback}
+                isLoading={isSubmittingFeedback}
+                disabled={selectionMode && selectedMessageIds.size === 0}
+                className="flex-1 flex items-center justify-center gap-2"
+              >
+                <CheckCircle className="w-4 h-4" />
+                {isSubmittingFeedback
+                  ? 'Analyzing & Submitting...'
+                  : selectionMode
+                    ? `Submit Selected (${selectedMessageIds.size})`
+                    : 'Submit All as Feedback'
+                }
+              </Button>
+            </div>
           </motion.div>
         )}
 

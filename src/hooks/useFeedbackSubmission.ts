@@ -31,7 +31,7 @@ export function useFeedbackSubmission() {
         text: text.trim(),
         department: department || 'General',
         timestamp: new Date().toISOString(),
-        status: 'submitted',
+        status: 'unread',
         anonymous: true,
         analysis
       };

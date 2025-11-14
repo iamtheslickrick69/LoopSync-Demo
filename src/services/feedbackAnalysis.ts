@@ -1,4 +1,5 @@
 import { claudeService } from './claudeAPI';
+import { FeedbackStatus } from '../types/feedback';
 
 export interface FeedbackAnalysis {
   sentiment: 'positive' | 'neutral' | 'negative';
@@ -21,7 +22,7 @@ export interface AnalyzedFeedback {
   text: string;
   department: string;
   timestamp: string;
-  status: 'submitted' | 'acknowledged' | 'in-progress' | 'resolved';
+  status: FeedbackStatus;
   anonymous: boolean;
   analysis: FeedbackAnalysis;
 }

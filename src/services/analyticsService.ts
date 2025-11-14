@@ -1,5 +1,5 @@
 import { AnalyzedFeedback } from './feedbackAnalysis';
-import { SentimentDataPoint, DepartmentMetrics, RiskIndicator, AIInsight } from '../types/analytics';
+import { SentimentDataPoint, DepartmentMetrics, AIInsight } from '../types/analytics';
 import { claudeService } from './claudeAPI';
 
 export interface DashboardAnalytics {
@@ -339,7 +339,7 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no code blocks.`;
       const avgSentiment = deptFeedback.reduce((acc, f) => acc + f.analysis.sentimentScore, 0) / deptFeedback.length;
 
       // Calculate avg response time for acknowledged/resolved items
-      const resolvedFeedback = deptFeedback.filter(f => f.status !== 'submitted');
+      const resolvedFeedback = deptFeedback.filter(f => f.status !== 'unread');
       const avgResponseTime = resolvedFeedback.length > 0
         ? resolvedFeedback.reduce((acc, f) => {
             const created = new Date(f.timestamp).getTime();
