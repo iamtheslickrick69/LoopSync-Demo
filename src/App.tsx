@@ -1,7 +1,6 @@
 import { AnimatePresence } from 'framer-motion';
 import { usePortalStore } from './store/portalStore';
-import { Header } from './components/layout/Header';
-import { PortalToggle } from './components/layout/PortalToggle';
+import { TopNav } from './components/layout/TopNav';
 import { Background3D } from './components/layout/Background3D';
 import { EmployeePortal } from './components/employee/EmployeePortal';
 import { OwnerPortal } from './components/owner/OwnerPortal';
@@ -14,14 +13,11 @@ function App() {
       {/* 3D Background Elements */}
       <Background3D />
 
-      {/* Header */}
-      <Header />
-
-      {/* Portal Toggle */}
-      <PortalToggle />
+      {/* Top Navigation */}
+      <TopNav />
 
       {/* Main Content */}
-      <main className="relative z-10">
+      <main className="relative">
         <AnimatePresence mode="wait">
           {currentPortal === 'employee' ? (
             <EmployeePortal key="employee" />

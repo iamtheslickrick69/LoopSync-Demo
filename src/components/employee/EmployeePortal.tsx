@@ -1,13 +1,27 @@
 import { motion } from 'framer-motion';
-import { ChatInterface } from './ChatInterface';
-import { StarterPrompts } from './StarterPrompts';
-import { useChatStore } from '../../store/chatStore';
+import { EmployeeSidebar } from '../layout/EmployeeSidebar';
+import { useNavigationStore } from '../../store/navigationStore';
+import { EmployeeHome } from './pages/EmployeeHome';
+import { MyFeedback } from './pages/MyFeedback';
+import { TeamPulse } from './pages/TeamPulse';
+import { HelpResources } from './pages/HelpResources';
 
 export function EmployeePortal() {
-  const { addMessage } = useChatStore();
+  const { employeePage } = useNavigationStore();
 
-  const handlePromptSelect = (prompt: string) => {
-    addMessage({ role: 'user', content: prompt });
+  const renderPage = () => {
+    switch (employeePage) {
+      case 'home':
+        return <EmployeeHome />;
+      case 'my-feedback':
+        return <MyFeedback />;
+      case 'team-pulse':
+        return <TeamPulse />;
+      case 'help':
+        return <HelpResources />;
+      default:
+        return <EmployeeHome />;
+    }
   };
 
   return (
@@ -16,63 +30,12 @@ export function EmployeePortal() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4 }}
-      className="relative z-10 max-w-4xl mx-auto px-8 py-12"
+      className="relative"
     >
-      {/* Hero Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="text-center mb-8"
-      >
-        <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-4">
-          How can{' '}
-          <span className="text-gradient">Coro</span>
-          {' '}help you today?
-        </h1>
-        <p className="text-xl text-gray-600">
-          Your trusted AI assistant for workplace feedback and support
-        </p>
-      </motion.div>
-
-      {/* Chat Interface */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <ChatInterface />
-      </motion.div>
-
-      {/* Starter Prompts */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <StarterPrompts onSelect={handlePromptSelect} />
-      </motion.div>
-
-      {/* Quick Stats */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6"
-      >
-        <div className="glass rounded-2xl p-6 text-center">
-          <div className="text-3xl font-bold text-gradient mb-2">100%</div>
-          <div className="text-sm text-gray-600">Anonymous & Secure</div>
-        </div>
-        <div className="glass rounded-2xl p-6 text-center">
-          <div className="text-3xl font-bold text-gradient mb-2">24/7</div>
-          <div className="text-sm text-gray-600">Always Available</div>
-        </div>
-        <div className="glass rounded-2xl p-6 text-center">
-          <div className="text-3xl font-bold text-gradient mb-2">AI-Powered</div>
-          <div className="text-sm text-gray-600">Intelligent Support</div>
-        </div>
-      </motion.div>
+      <EmployeeSidebar />
+      <div className="ml-64 relative z-10">
+        {renderPage()}
+      </div>
     </motion.div>
   );
 }
